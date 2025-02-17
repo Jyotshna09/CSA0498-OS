@@ -1,0 +1,97 @@
+import random
+import time
+
+class DynamicMemoryAllocator:
+    def __init__(self, total_memory_size=50):
+        self.total_memory_size = total_memory_size
+        self.memory = [None] * total_memory_size  # Initial memory is all free (None)
+        self.allocations = []  # To track allocated blocks
+        self.total_allocated = 0  # Track the total allocated memory size
+
+    def allocate(self, file_size):
+        # Try to find contiguous free space
+        for i in range(self.total_memory_size - file_size + 1):
+            if all(self.memory[i + j] is None for j in range(file_size)):
+                # Allocate memory blocks
+                for j in range(file_size):
+                    self.memory[i + j] = "F"  # Mark as occupied
+                self.allocations.append((i, file_size))
+                self.total_allocated += file_size
+                print(f"Allocated {file_size} blocks starting at index {i}")
+                return
+        print(f"Error: Not enough contiguous space to allocate {file_size} blocks.")
+
+    def deallocate(self):
+        if not self.allocations:
+            print("No allocations to deallocate!")
+            return
+
+        # Deallocate the first allocation (FIFO order for simplicity)
+        start, size = self.allocations.pop(0)
+        for i in range(size):
+            self.memory[start + i] = None  # Free the blocks
+        self.total_allocated -= size
+        print(f"Deallocated {size} blocks starting at index {start}")
+
+    def defragment(self):
+        # Compact the memory by moving allocated blocks to the beginning
+        allocated = [block for block in self.memory if block is not None]
+        free_space = [None] * (self.total_memory_size - len(allocated))
+        self.memory = allocated + free_space
+        print("Memory defragmented.")
+
+    def get_memory_usage(self):
+        return (self.total_allocated / self.total_memory_size) * 50
+
+    def get_fragmentation(self):
+        free_space = self.memory.count(None)
+        return (free_space / self.total_memory_size) * 50
+
+    def get_efficiency(self):
+        # Efficiency = allocated memory / total memory
+        return (self.total_allocated / self.total_memory_size) * 50
+
+    def display_memory(self):
+        memory_visual = ''.join(['[F]' if block == "F" else '[ ]' for block in self.memory])
+        print("Memory: ", memory_visual)
+
+# Simulation with varying workloads
+
+def simulate_workload():
+    allocator = DynamicMemoryAllocator(total_memory_size=100)
+
+    # Simulate a few allocations and deallocations with random sizes
+    workloads = [random.randint(1, 10) for _ in range(20)]  # Random file sizes to allocate
+
+    # Simulate allocation
+    for size in workloads:
+        allocator.allocate(size)
+        allocator.display_memory()
+        print(f"Memory Usage: {allocator.get_memory_usage():.2f}%")
+        print(f"Fragmentation: {allocator.get_fragmentation():.2f}%")
+        print(f"Efficiency: {allocator.get_efficiency():.2f}%\n")
+
+        time.sleep(1)  # Simulate some delay between allocations
+
+    # Simulate deallocation
+    for _ in range(10):
+        allocator.deallocate()
+        allocator.display_memory()
+        print(f"Memory Usage: {allocator.get_memory_usage():.2f}%")
+        print(f"Fragmentation: {allocator.get_fragmentation():.2f}%")
+        print(f"Efficiency: {allocator.get_efficiency():.2f}%\n")
+
+        time.sleep(1)  # Simulate some delay between deallocations
+
+    # Finally defragment the memory
+    allocator.defragment()
+    allocator.display_memory()
+    print(f"Memory Usage: {allocator.get_memory_usage():.2f}%")
+    print(f"Fragmentation: {allocator.get_fragmentation():.2f}%")
+    print(f"Efficiency: {allocator.get_efficiency():.2f}%")
+
+if __name__ == "__main__":
+    start_time = time.time()
+    simulate_workload()
+    end_time = time.time()
+    print(f"Total simulation time: {end_time - start_time:.2f} seconds")
