@@ -1,0 +1,69 @@
+import random
+
+class MemoryBlock:
+    def __init__(self, size, allocated=False):
+        self.size = size
+        self.allocated = allocated
+        self.process_id = None
+
+    def allocate(self, process_id):
+        self.allocated = True
+        self.process_id = process_id
+
+    def deallocate(self):
+        self.allocated = False
+        self.process_id = None
+
+class Memory:
+    def __init__(self, total_size, block_size):
+        self.total_size = total_size
+        self.block_size = block_size
+        self.blocks = [MemoryBlock(block_size) for _ in range(total_size // block_size)]
+
+    def display_memory(self):
+        for i, block in enumerate(self.blocks):
+            status = "Allocated" if block.allocated else "Free"
+            print(f"Block {i}: {status} - Process: {block.process_id if block.allocated else 'None'}")
+
+    def allocate_memory(self, process_id, size):
+        blocks_needed = size // self.block_size + (1 if size % self.block_size != 0 else 0)
+        consecutive_free_blocks = 0
+        for i in range(len(self.blocks) - blocks_needed + 1):
+            if all(not self.blocks[j].allocated for j in range(i, i + blocks_needed)):
+                for j in range(i, i + blocks_needed):
+                    self.blocks[j].allocate(process_id)
+                print(f"Memory allocated for Process {process_id} at Block {i}")
+                return True
+        print(f"Insufficient contiguous memory for Process {process_id}.")
+        return False
+
+    def deallocate_memory(self, process_id):
+        for block in self.blocks:
+            if block.allocated and block.process_id == process_id:
+                block.deallocate()
+        print(f"Memory deallocated for Process {process_id}")
+
+# Example of Fragmentation
+
+# Create a memory of 100 units with block size of 10 units
+memory = Memory(100, 10)
+
+# Allocating memory for processes
+memory.allocate_memory(1, 15)  # Process 1 needs 15 units
+memory.allocate_memory(2, 20)  # Process 2 needs 20 units
+memory.allocate_memory(3, 10)  # Process 3 needs 10 units
+
+# Display memory state after allocation
+print("\nMemory State After Allocation:")
+memory.display_memory()
+
+# Deallocate some memory, causing fragmentation
+memory.deallocate_memory(1)
+
+# Try to allocate more memory, demonstrating fragmentation
+memory.allocate_memory(4, 5)  # Process 4 needs 5 units, which may cause fragmentation
+
+# Display memory state after more allocation
+print("\nMemory State After Allocation with Fragmentation:")
+memory.display_memory()
+
